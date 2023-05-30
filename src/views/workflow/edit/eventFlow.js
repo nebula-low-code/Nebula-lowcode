@@ -369,6 +369,16 @@ Diagram.prototype._createOutputs = function (x, y, outputCount) {
                     arrowTitle = 'False';
                 }
             }
+            if (this.type === 'work-flow-approval') {
+                if (i == 0) {
+                    arrowTitle = '通过';
+                } else if(i==1) {
+                    arrowTitle = '不通过';
+                } else if(i==2) {
+                    arrowTitle = '撤回';
+                }
+            }
+            
             // this._createVerticalArrow(null, x + 16 + i * ArrowDefaultMargin, y + ArrowDefaultYOffset + i * ArrowDefaultMargin + offsetX, arrowTitle);
             this._createArrow(null, x + offsetX, y + ArrowDefaultYOffset + i * ArrowDefaultMargin - offset, arrowTitle);
         } //endfor
@@ -1037,6 +1047,7 @@ NextFlow.prototype._createDiagram = function (type, title, x, y, outputs) {
         properties.approveMethods=""
         properties.adoptRequired=false;
         properties.rejectRequired=false;
+        properties.approveList=[];
     }
     if(type=='work-flow-business-handler'){
         properties.operateApiId = '';
@@ -1210,6 +1221,8 @@ NextFlow.prototype.createDiagram = function (type, name, x, y) {
         this._createDiagram(type, name, x, y, 2);
     } else if (type === 'work-flow-if') {
         this._createDiagram(type, name, x, y, 2);
+    } else if (type === 'work-flow-approval') {
+        this._createDiagram(type, name, x, y, 3);
     } else {
         this._createDiagram(type, name, x, y, 1);
     }

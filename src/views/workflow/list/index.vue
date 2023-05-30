@@ -1,83 +1,56 @@
 <template>
   <div v-loading="viewLoading" class="workflow-setting-container">
-    <el-row class="setting-title" v-if="!showFlow">
-      <el-col :span="6">
-        <el-row
-          ><el-button @click="addScopeVisible = true"
-            >添加分类</el-button
-          ></el-row
+    <a-row class="setting-title" v-if="!showFlow">
+      <a-col :span="6">
+        <a-row
+          ><a-button
+            @click="
+              addScope
+            "
+            >添加分类</a-button
+          ></a-row
         >
-        <el-menu default-active="1" class="el-menu-vertical-demo">
-          <el-menu-item
+        <a-menu class="a-menu-vertical-demo">
+          <a-menu-item
             :index="scopeIndex.toString()"
             :key="scopeIndex"
             v-for="(scopeItem, scopeIndex) in scopeList"
             @click="clickScope(scopeItem)"
           >
-            <span slot="title">
+            <span>
               {{ scopeItem.scopeName }}
-              <i
-                class="el-icon-delete setting-delete"
-                style="cursor: pointer"
-                @click.stop="delScope(scopeItem)"
-              ></i>
-
-              <i
-                class="iconfont iconbianji setting-edit"
-                style="cursor: pointer"
-                @click.stop="editScope(scopeItem)"
-              ></i>
+              <a-icon class="setting-delete" style="cursor: pointer" type="delete"  @click.stop="delScope(scopeItem)" />
+              <a-icon class="setting-edit" style="cursor: pointer" type="edit" @click.stop="editScope(scopeItem)"  />
             </span>
-          </el-menu-item>
-        </el-menu>
-      </el-col>
-      <el-col :span="18">
-        <el-row><el-button @click="openWorkflowDialog">添加工作流</el-button></el-row>
-        <el-table :data="flowList" style="width: 100%">
-          <el-table-column prop="id" label="id" width="180"> </el-table-column>
-          <el-table-column prop="workflowName" label="名称" width="180">
-          </el-table-column>
-          <el-table-column prop="address" label="备注"> </el-table-column>
-          <el-table-column prop="updateBy" label="修改人" width="180">
-          </el-table-column>
-          <el-table-column prop="updateTime" label="修改日期" width="180">
-          </el-table-column>
-          <el-table-column label="操作" width="180">
-            <template slot-scope="scope">
-              <el-button @click="handleEdit(scope.row)" type="text" size="small"
-                >设计</el-button
-              >
-              <el-button
-                @click="handleUpdate(scope.row)"
-                type="text"
-                size="small"
-                >修改</el-button
-              >
-              <el-button
-                @click="handleDelete(scope.row)"
-                type="text"
-                size="small"
-                >删除</el-button
-              >
-            </template>
-          </el-table-column>
-        </el-table>
-      </el-col>
-    </el-row>
+          </a-menu-item>
+        </a-menu>
+      </a-col>
+      <a-col :span="18">
+        <a-row
+          ><a-button @click="openWorkflowDialog">添加工作流</a-button></a-row
+        >
+        <a-table :columns="columns" :data-source="flowList" :scroll="{ x: 'max-content' | true, y: 500 }" style="width: 100%">
+          <span slot="action" slot-scope="text, record">
+            <a @click="handleEdit(record)">设计</a>
+            <a-divider type="vertical" />
+            <a @click="handleUpdate(record)">修改</a>
+            <a-divider type="vertical" />
+            <a @click="handleDelete(record)">删除</a>
+          </span>
+        </a-table>
+      </a-col>
+    </a-row>
     <workFlowEdit v-if="showFlow" :id="flowId" @goBack="goBack" />
     <addScopeDialog
+      ref="addScope"
       :dialog-visible.sync="addScopeVisible"
-      :id="selectScopeId"
-      :scopeName="selectScopeName"
-      title="添加分类"
+      :title="scopeTitle"
       @initData="initScope"
     />
     <addWorkflowDialog
+      ref="addWorkflow"
       :dialog-visible.sync="addWorkflowVisible"
-      :id="selectFlowId"
-      :scopeId="selectScopeId"
-      :workflowName="selectFlowName"
-      title="添加工作流"
+      :title="workflowTitle"
       @initData="initFlowData"
     />
   </div>
@@ -89,6 +62,7 @@ import {
   getWorkFlowScopeList,
   getWorkFlowList,
   deleteWorkFlowScope,
+  deleteWorkFlow,
 } from "@/api/workflow/index";
 import workFlowEdit from "@/views/workflow/edit/index.vue";
 import addScopeDialog from "./dialog-module/add-scope.vue";
@@ -102,12 +76,46 @@ export default {
       flowList: [],
       flowId: null,
       showFlow: false,
+      scopeTitle:'添加分类',
+      workflowTitle:'添加工作流',
       addScopeVisible: false,
       addWorkflowVisible: false,
       selectScopeId: null,
-      selectScopeName:null,
-      selectFlowId:null,
-      selectFlowName:null,
+      selectScopeName: null,
+      selectFlowId: null,
+      selectFlowName: null,
+      columns: [
+        {
+          title: "id",
+          dataIndex: "id",
+          key: "id",
+        },
+        {
+          title: "名称",
+          dataIndex: "workflowName",
+          key: "workflowName",
+        },
+        {
+          title: "备注",
+          dataIndex: "address",
+          key: "address",
+        },
+        {
+          title: "修改人",
+          dataIndex: "updateBy",
+          key: "updateBy",
+        },
+        {
+          title: "修改日期",
+          dataIndex: "updateTime",
+          key: "updateTime",
+        },
+        {
+          title: "操作",
+          key: "action",
+          scopedSlots: { customRender: "action" },
+        },
+      ],
     };
   },
   computed: {
@@ -123,15 +131,18 @@ export default {
       });
     },
     delScope(scopeItem) {
-      this.$confirm("请确认是否删除", "提示", {
+        let _this = this;
+      this.$antdConfirm({
+        title:"提示",
+        content:"请确认是否删除",
         confirmButtonText: "确定",
         cancelButtonText: "取消",
         type: "warning",
+        onOk(){
+            _this.deleteScopeService(scopeItem.businessId);
+        },
       })
-        .then(() => {
-          this.deleteScopeService(scopeItem.businessId);
-        })
-        .catch(() => {});
+
     },
     deleteScopeService(scopeId) {
       let param = {
@@ -145,43 +156,67 @@ export default {
         this.initScope();
       });
     },
+    addScope(){
+      this.addScopeVisible = true;
+      this.scopeTitle = '添加分类'
+      this.$refs['addScope'].dialogOpen();
+    },
     editScope(scopeItem) {
-        this.addScopeVisible = true
-        this.selectScopeId=scopeItem.businessId
-        this.selectScopeName = scopeItem.scopeName
+      this.addScopeVisible = true;
+      this.selectScopeId = scopeItem.businessId;
+      this.selectScopeName = scopeItem.scopeName;
+      this.scopeTitle = '编辑分类'
+      this.$refs['addScope'].dialogOpen(scopeItem.businessId,scopeItem.scopeName);
     },
     clickScope(scopeItem) {
-      this.selectScopeId=scopeItem.businessId
-      this.initFlowList(scopeItem.businessId)
+      this.selectScopeId = scopeItem.businessId;
+      this.initFlowList(scopeItem.businessId);
     },
-    initFlowData(){
-      this.initFlowList(this.selectScopeId)
+    initFlowData() {
+      this.initFlowList(this.selectScopeId);
     },
-    initFlowList(businessScopeId){
-       let param = {
+    initFlowList(businessScopeId) {
+      let param = {
         businessScopeId: businessScopeId,
       };
       getWorkFlowList(param).then((res) => {
         this.flowList = res.dataList;
       });
     },
-    openWorkflowDialog(){
-         this.selectFlowId = null
-      this.selectFlowName = null
-      this.addWorkflowVisible = true
+    openWorkflowDialog() {
+      this.selectFlowId = null;
+      this.selectFlowName = null;
+      this.addWorkflowVisible = true;
+      this.workflowTitle = '添加工作流'
+      this.$refs['addWorkflow'].dialogOpen(undefined, this.selectScopeId);
     },
     handleEdit(row) {
-      console.log("----------", row);
       this.flowId = row.id;
       this.showFlow = true;
     },
-    handleUpdate(row){
-      this.selectFlowId = row.id
-      this.selectFlowName = row.workflowName
-      this.addWorkflowVisible = true
+    handleUpdate(row) {
+      this.selectFlowId = row.id;
+      this.selectFlowName = row.workflowName;
+      this.addWorkflowVisible = true;
+      this.workflowTitle = '编辑工作流'
+      this.$refs['addWorkflow'].dialogOpen(row.id,row.scopeId,row.workflowName);
     },
     handleDelete(row) {
-      let param = {
+        let _this = this;
+      this.$antdConfirm({
+        title:"提示",
+        content:"请确认是否删除",
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+        onOk(){
+            _this.deleteWorkflowService(row);
+        },
+      })
+
+    },
+    deleteWorkflowService(row){
+        let param = {
         businessId: row.id,
       };
 
@@ -212,10 +247,20 @@ export default {
 }
 .setting-edit {
   float: right;
+  margin-top: 14px;
 }
 .setting-delete {
   float: right;
   margin-right: 10px;
-  margin-top: 20px;
+  margin-top: 14px;
+}
+a {
+    color: #1890ff;
+    text-decoration: none;
+    background-color: transparent;
+    outline: none;
+    cursor: pointer;
+    transition: color .3s;
+    -webkit-text-decoration-skip: objects;
 }
 </style>

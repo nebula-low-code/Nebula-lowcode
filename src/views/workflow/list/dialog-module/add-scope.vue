@@ -1,35 +1,40 @@
 <template>
-  <el-dialog
-    :title="title"
-    width="450px"
+  <a-modal
     :visible.sync="isShowDialog"
-    :append-to-body="true"
-    :close-on-click-modal="false"
     @open="dialogOpen"
+    :title="title"
+    @ok="saveNew"
+    @cancel="cancal"
   >
-    <el-form
+    <a-form
+      :layout="formLayout"
       ref="processForm"
-      :rules="rules"
       label-width="80px"
       :model="dataForm"
     >
-      <el-form-item label="名称：" prop="scopeName" size="small">
-        <el-input v-model="dataForm.scopeName" maxlength="50" />
-      </el-form-item>
-      <el-form-item />
-    </el-form>
-    <div slot="footer" class="dialog-footer">
-      <el-button @click="cancal">取 消</el-button>
-      <!-- <el-button
-        type="primary"
-        :disabled="btnLoading"
-        @click="save"
-      >保 存</el-button> -->
-      <el-button type="primary" :disabled="btnLoading" @click="saveNew"
-        >保 存</el-button
+      <a-form-item
+        label="名称："
+        :label-col="formItemLayout.labelCol"
+        :wrapper-col="formItemLayout.wrapperCol"
+        prop="scopeName"
+        size="small"
       >
-    </div>
-  </el-dialog>
+        <a-input
+          v-decorator="[
+            'scopeName',
+            {
+              rules: [
+                { required: true, message: '请输入名称', trigger: 'blur' },
+              ],
+            },
+          ]"
+          v-model="dataForm.scopeName"
+          maxlength="50"
+        />
+      </a-form-item>
+      <a-form-item />
+    </a-form>
+  </a-modal>
 </template>
 
 <script>
@@ -37,14 +42,6 @@ import { addWorkFlowScope } from "@/api/workflow/index";
 export default {
   name: "AddProject",
   props: {
-    id: {
-      type: String | Number,
-      default: "",
-    },
-    scopeName: {
-      type: String,
-      default: "",
-    },
     dialogVisible: {
       type: Boolean,
       default: false,
@@ -57,15 +54,16 @@ export default {
   },
   data() {
     return {
+        id:"",
+        scopeName:"",
       isActiveType: "ProcessFlow",
       btnLoading: false,
       dataForm: {
         scopeName: "",
       },
+      formLayout: "horizontal",
       rules: {
-        scopeName: [
-          { required: true, message: "请输入名称", trigger: "blur" },
-        ],
+        scopeName: [{ required: true, message: "请输入名称", trigger: "blur" }],
       },
     };
   },
@@ -79,6 +77,15 @@ export default {
         this.$emit("update:dialogVisible", val);
       },
     },
+    formItemLayout() {
+      const { formLayout } = this;
+      return formLayout === "horizontal"
+        ? {
+            labelCol: { span: 4 },
+            wrapperCol: { span: 14 },
+          }
+        : {};
+    },
   },
   created() {},
   mounted() {},
@@ -91,19 +98,16 @@ export default {
     },
 
     saveNew() {
-      this.$refs.processForm.validate(async (valid) => {
-        if (valid) {
-          //update
-          var params = {
-            scopeName: this.dataForm.scopeName,
-            id: this.id,
-          };
-          addWorkFlowScope(params).then((res) => {
-            if (res.code === 0) {
-              this.$emit("initData");
-              this.isShowDialog = false;
-            }
-          });
+     
+      //TODO 校验 
+      var params = {
+        scopeName: this.dataForm.scopeName,
+        id: this.id,
+      };
+      addWorkFlowScope(params).then((res) => {
+        if (res.code === 0) {
+          this.$emit("initData");
+          this.isShowDialog = false;
         }
       });
     },
@@ -130,7 +134,18 @@ export default {
     //     }
     //   });
     // },
-    dialogOpen() {
+    dialogOpen(id,scopeName) {
+        console.log('-----dialogOpen-----',scopeName)
+        if(id){
+            this.id=id;
+        }else{
+            this.id=null;
+        }
+        if(scopeName){
+            this.scopeName = scopeName
+        }else{
+            this.scopeName=null;
+        }
       this.dataForm = {
         scopeName: this.scopeName,
       };

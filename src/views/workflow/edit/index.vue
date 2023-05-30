@@ -1,57 +1,33 @@
 <template>
-  <!-- <el-dialog
-    :title="title"
-    width="60%"
-    top="5vh"
-    v-loading="listLoading"
-    :visible.sync="isShowDialog"   
-    :append-to-body="true"
-    @open="dialogOpen"
-    :before-close="handleClose"
-  > -->
   <div class="workflow-wrap">
-    <el-page-header @back="goBack" content="工作流编辑页面"> </el-page-header>
-    <custom-header>
-      <div slot="opertBtn">
-        <span class="el-button-opert-text">
-          <el-button
-            type="text"
-            class="save_btn"
-            icon="el-icon-tickets"
-            @click="saveData"
-          >
-            保存
-          </el-button>
-        </span>
-      </div>
-    </custom-header>
+    <a-page-header @back="goBack" title="工作流编辑页面">
+      <template slot="extra">
+        <a-button
+          type="text"
+          class="save_btn"
+          icon="save"
+          @click="saveData"
+        >
+          保存
+        </a-button>
+      </template>
+    </a-page-header>
+
     <div class="split-pane-page-wrapper right-menu-div">
       <div slot="left" class="pane left-pane">
-        <!--  <div v-if="drawer">
-          <RightMenu
-            ref="rightMenu"
-            :curDiagram="curDiagram"
-            :deviceDesignType="deviceDesignType"
-            :interfaceApiAll="interfaceApiAll"
-            :interfaceApiNewAll="interfaceApiNewAll"
-            :hrefPageList="hrefPageList"
-          /> 
-        </div>-->
         <div id="drag-items" class="shapes">
-          <el-collapse
+          <a-collapse
             v-model="collapseActives"
             @change="handleChange"
             class="aside-menu drag-shape"
           >
-            <el-collapse-item
+            <a-collapse-panel
               :title="aside.label"
               :name="key"
               v-for="(aside, key) in mList"
               :key="key"
+              :header="aside.label"
             >
-              <template slot="title">
-                <span class="aside-collapse-title">{{ aside.label }}</span>
-              </template>
               <draggable
                 tag="ul"
                 class="menu-item-wrap"
@@ -82,8 +58,8 @@
                   </div>
                 </li>
               </draggable>
-            </el-collapse-item>
-          </el-collapse>
+            </a-collapse-panel>
+          </a-collapse>
         </div>
       </div>
       <div
@@ -101,12 +77,14 @@
         </div>
         <div class="r-menu"></div>
       </div>
-      <el-drawer
+      <a-drawer
         :title="drawerTitle"
         :visible.sync="drawer"
         direction="rtl"
-        :append-to-body="true"
-        :before-close="handleDrawerClose"
+        width="40%"
+        :wrap-style="{ position: 'absolute' }"
+        :body-style="{ padding: 0 }"
+        @close="handleDrawerClose"
       >
         <RightMenu
           ref="rightMenu"
@@ -116,28 +94,10 @@
           :interfaceApiNewAll="interfaceApiNewAll"
           :hrefPageList="hrefPageList"
         />
-      </el-drawer>
-      <!-- <div
-        slot="right"
-        class="pane right-pane right-wrap"
-        style="overflow: auto"
-      >
-        <RightMenu
-          ref="rightMenu"
-          :curDiagram="curDiagram"
-          :refreshComponentList="refreshComponentList"
-          :dialogBoxComponentList="dialogBoxComponentList"
-          :linearComponentList="linearComponentList"
-          :deviceDesignType="deviceDesignType"
-        />
-      </div> -->
+      </a-drawer>
     </div>
-    <div slot="footer" class="dialog-footer">
-      <!-- <el-button @click="isShowDialog = false">取 消</el-button>
-      <el-button type="primary" @click="save">保 存</el-button> -->
-    </div>
+
   </div>
-  <!-- </el-dialog> -->
 </template>
 
 <script>
@@ -145,7 +105,6 @@ import { mapGetters } from "vuex";
 import { pcMenuList, mobileMenuList, workFlowList } from "./left-menu/menu";
 import Draggable from "vuedraggable";
 import RightMenu from "./right-menu/event-item.vue";
-import CustomHeader from "@/components/customHeader";
 import {
   getConnectListService,
   getConnectProcessListService,
@@ -183,7 +142,6 @@ export default {
     SplitPane,
     RightMenu,
     Draggable,
-    CustomHeader,
   },
   data() {
     return {
@@ -282,14 +240,14 @@ export default {
             let paramExist = false;
             currentActionItem.interfaceDataConfig.paramsConfigs.forEach(
               (pItem) => {
-                if (pItem.param_name == item.name) {
+                if (pItem.paramName == item.name) {
                   paramExist = true;
                 }
               }
             );
             if (!paramExist) {
               let param = {
-                param_name: item.name,
+                paramName: item.name,
               };
               currentActionItem.interfaceDataConfig.paramsConfigs.push(param);
             }
@@ -571,9 +529,7 @@ export default {
 }
 </style>
 <style lang="less" scoped>
-.el-form-item {
-  margin-bottom: 20px;
-}
+
 .new-role {
   float: right;
 }
@@ -682,7 +638,7 @@ export default {
       cursor: pointer;
     }
   }
-  /deep/.el-collapse-item__content {
+  /deep/.a-collapse-item__content {
     padding-top: 1px;
     padding-left: 1px;
   }
@@ -690,7 +646,7 @@ export default {
 
 .menu-item-wrap {
   padding: 0 10px;
-
+  height:540px;
   li {
     display: inline-flex;
     //display: flex;
@@ -732,9 +688,7 @@ export default {
   height: 36px;
   margin: auto;
 }
-/deep/.el-dialog__body {
-  padding: 20px 0px 0px 0px;
-}
+
 
 #menu {
   display: none;
@@ -760,14 +714,5 @@ export default {
 #menu button:hover {
   background-color: #17678b;
 }
-/deep/ .el-drawer.rtl {
-  width: 40% !important;
-  overflow: auto;
-}
-/deep/.el-dialog__footer {
-  padding: 0;
-}
-/deep/.el-dialog__body {
-  padding: 0;
-}
+
 </style>
